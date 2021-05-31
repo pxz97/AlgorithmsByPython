@@ -1,0 +1,2 @@
+def mergeSort(alist):
+    pass

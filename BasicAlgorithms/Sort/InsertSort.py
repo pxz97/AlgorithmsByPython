@@ -1,0 +1,2 @@
+def insertSort(alist):
+    pass

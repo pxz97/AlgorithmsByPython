@@ -1,0 +1,2 @@
+def selectSort(alist):
+    pass

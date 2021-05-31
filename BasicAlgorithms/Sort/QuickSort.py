@@ -1,0 +1,2 @@
+def quickSort(alist):
+    pass
