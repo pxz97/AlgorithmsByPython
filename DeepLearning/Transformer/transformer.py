@@ -143,8 +143,257 @@ class MultiHeadedAttention(nn.Module):
 
         batch_size = query.size(0)
 
+        """
+        将输入QKV分别传入线性层中
+        做完线性变换后，开始为每个头分割输入，使用view方法对线性变换结果进行维度重塑
+        每个头可以获得一部分词特征组成的句子
+        为了让代表句子长度维度和词向量维度能够相邻，这样注意力机制才能找到语义与句子位置的关系
+        """
+        query, key, value = [model(x).view(batch_size, -1, self.head, self.d_k).transpose(1, 2)
+                             for model, x in zip(self.linears, (query, key, value))]
+
+        x, self.attn = attention(query, key, value, mask=mask, dropout=self.dropout)
+
+        """
+        多头注意力机制后，得到了每个头计算结果组成的4维张量，将其转换为输入的形状
+        先对第二、三维转置（对第一步处理环节的逆操作）
+        """
+        x = x.transpose(1, 2).contiguous().view(batch_size, -1, self.head * self.d_k)
+
+        # 最后使用线性层列表中的最后一个线性层对输入进行线性变换得到最终多头注意力结构的输出
+        return self.linears[-1](x)
 
 
+class PositionwiseFeedForward(nn.Module):
+    def __init__(self, d_model, d_ff, dropout=0.1):
+        super(PositionwiseFeedForward, self).__init__()
+
+        self.w1 = nn.Linear(d_model, d_ff)
+        self.s2 = nn.Linear(d_ff, d_model)
+
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, x):
+        return self.w2(self.dropout(F.relu(self.w1(x))))
 
 
+class LayerNorm(nn.Module):
+    def __init__(self, features, eps=1e-6):
+        """
+        :param features: 词嵌入的维度
+        :param eps: 一个足够小的数，在规范化公式的分母中出现，防止分母为0
+        """
+        super(LayerNorm, self).__init__()
+
+        # 根据features的形状初始化两个参数张量a2和b2，a2为全1张量，b2为全0张量
+        self.a2 = nn.Parameter(torch.ones(features))
+        self.b2 = nn.Parameter(torch.zeros(features))
+
+        self.eps = eps
+
+    def forward(self, x):
+        """
+        首先对输入变量x求其最后一个维度的均值，并保持输出维度与输入维度一致
+        接着再求最后一个维度的标准差，然后就是根据规范化公式，用x减去均值除以标准差获得规范化的结果
+        最后对结果乘以缩放参数，即a2，加上位移参数b2
+        """
+        mean = x.mean(-1, keepdim=True)
+        std = x.std(-1, keepdim=True)
+        return self.a2 * (x - mean) / (std + self.eps) + self.b2
+
+
+class SublayerConnection(nn.Module):
+    def __init__(self, size, dropout=0.1):
+        """
+        :param size: 词嵌入维度大小
+        :param dropout: 对模型中节点随机抑制比率
+        """
+        super(SublayerConnection, self).__init__()
+        self.norm = LayerNorm(size)
+        self.dropout = nn.Dropout(p=dropout)
+
+    def forward(self, x, sublayer):
+        return x + self.dropout(sublayer(self.norm(x)))
+
+
+class EncoderLayer(nn.Module):
+    def __init__(self, size, self_attn, feed_forward, dropout):
+        """
+        :param size: 词嵌入维度大小
+        :param self_attn: 多头自注意力子层
+        :param feed_forward: 前馈全连接层
+        :param dropout: 置0比率
+        """
+        super(EncoderLayer, self).__init__()
+
+        self.self_attn = self_attn
+        self.feed_forward = feed_forward
+
+        self.sublayer = clones(SublayerConnection(size, dropout), 2)
+        self.size = size
+
+    def forward(self, x, mask):
+        x = self.sublayer[0](x, lambda x: self.self_attn(x, x, x, mask))
+        return self.sublayer[1](x, self.feed_forward)
+
+
+class Encoder(nn.Module):
+    def __init__(self, layer, N):
+        super(Encoder, self).__init__()
+
+        self.layers = clones(layer, N)
+        self.norm = LayerNorm(layer.size)
+
+    def forward(self, x, mask):
+        for layer in self.layers:
+            x = layer(x, mask)
+        return self.norm(x)
+
+
+class DecoderLayer(nn.Module):
+    def __init__(self, size, self_attn, src_attn, feed_forward, dropout):
+        """
+        :param size: 词嵌入的维度大小
+        :param self_attn: 多头自注意力对象，Q=K=V
+        :param src_attn: 多头注意力对象，Q!=K=V
+        :param feed_forward: 前馈全连接层对象
+        :param dropout: 置0比率
+        """
+        super(DecoderLayer, self).__init__()
+
+        self.size = size
+        self.self_attn = self_attn
+        self.src_attn = src_attn
+        self.feed_forward = feed_forward
+
+        self.sublayer = clones(SublayerConnection(size, dropout), 3)
+
+    def forward(self, x, memory, source_mask, target_mask):
+        """
+        :param x: 上一层输入
+        :param memory: 来自编码器层的语义存储变量memory
+        :param source_mask: 源数据掩码张量
+        :param target_mask: 目标数据掩码张量
+        """
+        m = memory
+
+        """
+        将x传入第一个子层结构，第一个子层结构的输入分别是x和self_attn函数，因为是自注意力机制，所以Q，K，V相等
+        target_mask是目标数据掩码张量，因为此时模型可能还没有生成任何目标数据，所以要对目标数据进行遮掩
+        比如
+            在编码器准备生成第一个字符时，其实已经传入了第一个字符以便计算损失
+            但是我们不希望生成第一个字符时利用这个信息，因此会将其遮掩
+            同样生成第二个字符时，模型只能使用第一个字符信息，不能使用第二个字符及之后的信息
+        """
+        x = self.sublayer[0](x, lambda y: self.self_attn(x, x, x, target_mask))
+
+        """
+        第二层为常规的注意力机制，q是输入x，k和v是编码层输出memory
+        source_mask并非为了抑制信息泄漏，而是遮蔽掉对结果没有意义的字符而产生的注意力值，以此来提升模型效果和训练速度
+        """
+        x = self.sublayer[1](x, lambda y: self.src_attn(x, m, m, source_mask))
+
+        return self.sublayer[2](x, self.feed_forward)
+
+
+class Decoder(nn.Module):
+    def __init__(self, layer, N):
+        super(Decoder, self).__init__()
+        self.layers = clones(layer, N)
+        self.norm = LayerNorm(layer.size)
+
+    def forward(self, x, memory, source_mask, target_mask):
+        for layer in self.layers:
+            x = layer(x, memory, source_mask, target_mask)
+        return self.norm(x)
+
+
+class Generator(nn.Module):
+    def __init__(self, d_model, vocab_size):
+        super(Generator, self).__init__()
+        self.project = nn.Linear(d_model, vocab_size)
+
+    def forward(self, x):
+        return F.log_softmax(self.project(x), dim=-1)
+
+
+class EncoderDecoder(nn.Module):
+    def __init__(self, encoder, decoder, source_embed, target_embed, generator):
+        """
+        :param encoder: 编码器对象
+        :param decoder: 解码器对象
+        :param source_embed: 源数据嵌入函数
+        :param target_embed: 目标数据嵌入函数
+        :param generator: 输出部分的类别生成器对象
+        """
+        super(EncoderDecoder, self).__init__()
+
+        self.encoder = encoder
+        self.decoder = decoder
+        self.src_embed = source_embed
+        self.tgt_embed = target_embed
+        self.generator = generator
+
+    def forward(self, source, target, source_mask, target_mask):
+        return self.decode(self.encode(source, source_mask), source_mask, target, target_mask)
+
+    def encode(self, source, source_mask):
+        # 使用src_embed对source做处理，然后和source_mask一起传给self.encoder
+        return self.encoder(self.src_embed(source), source_mask)
+
+    def decode(self, memory, source_mask, target, target_mask):
+        # 使用tgt_embed对target做处理，然后和source_mask，target_mask，memory一起传给
+        return self.decoder(self.tgt_embed(target), memory, source_mask, target_mask)
+
+
+def make_model(source_vocab, target_vocab, N=6, d_model=512, d_ff=2048, head=8, dropout=0.1):
+    """
+    :param source_vocab: 源数据特征（词汇）总数
+    :param target_vocab: 目标数据特征（词汇）总数
+    :param N: 编码器和解码器堆叠数
+    :param d_model: 词向量映射维度
+    :param d_ff: 前馈全连接网络中变换矩阵的维度
+    :param head: 多头注意力结构中的头数
+    :param dropout: 置零比率
+    """
+    c = copy.deepcopy
+
+    # 实例化了多头注意力类，得到对象attn
+    attn = MultiHeadedAttention(head, d_model)
+
+    # 实例化前馈全连接类，得到对象ff
+    ff = PositionwiseFeedForward(d_model, d_ff, dropout)
+
+    # 实例化位置编码类，得到对象position
+    position = PositionalEncoding(d_model, dropout)
+
+    """
+    最外层是EncoderDecoder，在EncoderDecoder中
+    分别是编码器层，解码器层，源数据Embedding层和位置编码组成的有序结构
+    目标数据Embedding层和位置编码组成的有序结构，以及类别生成器层
+    在编码器层中有attention子层以及前馈全连接子层
+    在解码器层中有两个attention子层以及前馈全连接层
+    """
+    model = EncoderDecoder(
+        Encoder(EncoderLayer(d_model, c(attn), c(ff), dropout), N),
+        Decoder(DecoderLayer(d_model, c(attn), c(attn), c(ff), dropout), N),
+        nn.Sequential(Embeddings(d_model, source_vocab), c(position)),
+        nn.Sequential(Embeddings(d_model, target_vocab), c(position)),
+        Generator(d_model, target_vocab)
+    )
+
+    # 参数初始化：一旦参数的维度大于1，则将其初始化成一个服从均匀分布的矩阵
+    for p in model.parameters():
+        if p.dim() > 1:
+            nn.init.xavier_uniform_(p)
+    return model
+
+
+sourcd_vocab = 11
+target_vocab = 11
+N = 6
+
+if __name__ == "__main__":
+    res = make_model(sourcd_vocab, target_vocab, N)
+    print(res)
 
