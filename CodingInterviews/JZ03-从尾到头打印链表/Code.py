@@ -9,6 +9,6 @@ class Solution:
         """
         从头到尾打印链表
         :param listNode: ListNode, 链表头结点
-        :return: List, 从尾部到头部的列表值序列
+        :return: List[int], 从尾部到头部的列表值序列
         """
         return self.printListFromTailToHead(listNode.next) + [listNode.val] if listNode else []
