@@ -1,1 +1,1 @@
-asdadasd=1
+print("asd")
