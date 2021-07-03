@@ -16,6 +16,9 @@ base_data = [
 
 # 1. 将base_data中的8个诗句遍历进行分词
 base_items = [[i for i in jieba.cut(item)] for item in base_data]
+count = 0
+for item in base_items:
+    count += len(item)
 
 dictionary = corpora.Dictionary(base_items)
 
@@ -33,4 +36,3 @@ test_words = [word for word in jieba.cut(test_text)]
 new_vec = dictionary.doc2bow(test_words)
 
 sims = index[tfidf[new_vec]]
-print(sims)
