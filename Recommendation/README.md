@@ -5,10 +5,10 @@
 
 目前主要实现了：
 
-   [DeepFM](./Recommendation/DeepFM)
+   [DeepFM](./DeepFM)
   
-   [NeuralCF](./Recommendation/NeuralCF)
+   [NeuralCF](./NeuralCF)
   
-   [Wide&Deep](./Recommendation/WideNDeep)
+   [Wide&Deep](./WideNDeep)
   
-   [EmbeddingMLP](./Recommendation/EmbeddingMLP)
+   [EmbeddingMLP](./EmbeddingMLP)
