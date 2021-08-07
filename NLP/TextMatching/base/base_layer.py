@@ -351,6 +351,17 @@ class SoftAttention:
 
     def _soft_alignment(self, inputs):
 
+        attention = inputs[0]
+        sentence = inputs[1]
+
+        exp = K.exp(attention - K.max(attention, axis=-1, keepdims=True))
+        exp_sum = K.sum(exp, axis=-1, keepdims=True)
+        softmax = exp / exp_sum
+
+        return K.batch_dot(softmax, sentence)
+
+    def _soft_alignment_output_shape(self, inputs):
+
         attention_shape = inputs[0]
         sentence_shape = inputs[1]
 
