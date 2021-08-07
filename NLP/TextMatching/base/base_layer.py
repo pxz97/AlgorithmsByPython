@@ -321,7 +321,7 @@ class SoftAttention:
         inputs_a = inputs[0]
         inputs_b = inputs[1]
 
-        attention = layers.Lambda(self.__attention,
+        attention = layers.Lambda(self._attention,
                                   output_shape=self._attention_output_shape,
                                   arguments=None)(inputs)
 
