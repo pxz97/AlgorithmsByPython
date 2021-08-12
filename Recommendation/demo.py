@@ -3,7 +3,7 @@ from Recommendation.base.utils import get_dataset
 from Recommendation.base.conf import train_samples_file_path, test_samples_file_path
 
 if __name__ == "__main__":
-    model_name = "wide_deep"
+    model_name = "embedding_mlp"
 
     train_dataset = get_dataset(train_samples_file_path)
     test_dataset = get_dataset(test_samples_file_path)
@@ -20,6 +20,9 @@ if __name__ == "__main__":
     elif model_name == "wide_deep":
         from Recommendation.WideNDeep.model import WideNDeep
         model = WideNDeep().build()
+    elif model_name == "din":
+        from Recommendation.DIN.model import DIN
+        model = DIN().build()
     else:
         raise ValueError
 
