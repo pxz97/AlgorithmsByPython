@@ -57,9 +57,9 @@ TF-IDF可以分为两部分：词频（Term Frequency，TF）和逆文本频率�
 
 通过计算文档中每个字词的TF-IDF值，可以得到一个表征文本的向量，通过计算其相似度值（余弦相似度），就可以计算两个文本的相似度。
 #### 2.2 Word2Vec
-早在2003年Bengio等人提出的文章[A neural probabilistic language model](./Paper/NLP/【NNLM】 A neural probabilistic language model.pdf)中提出的神经网络模型（NNLM）就用到了Embedding词向量，只是在这个模型中，目标是生成语言模型，词向量只是一个副产品。
+早在2003年Bengio等人提出的文章[A neural probabilistic language model](./Paper/NLP/{NNLM} A neural probabilistic language model.pdf)中提出的神经网络模型（NNLM）就用到了Embedding词向量，只是在这个模型中，目标是生成语言模型，词向量只是一个副产品。
 
-Mikolov等人与2013年在文章[Efficient Estimation of Word Representations in Vector Space](./Paper/NLP/【Word2Vec】 Efficient Estimation of Word Representations in Vector Space (Google 2013).pdf)中提出的Word2Vec的核心思想是认为词的意思可以从它频繁出现的上下文信息中体现。
+Mikolov等人与2013年在文章[Efficient Estimation of Word Representations in Vector Space](./Paper/NLP/{Word2Vec} Efficient Estimation of Word Representations in Vector Space (Google 2013).pdf)中提出的Word2Vec的核心思想是认为词的意思可以从它频繁出现的上下文信息中体现。
 
 Word2Vec又可以分为两种结构，一种是CBOW，即利用窗口内的上下文去预测中心词；另一种是Skip-gram，利用中心词去预测窗口内的上下文。CBOW和Skip-gram结构如下图所示：
 
@@ -77,7 +77,7 @@ Word2Vec又可以分为两种结构，一种是CBOW，即利用窗口内的上�
 在本部分中，我将分别介绍三种经典流行的深度学习模型，分别是DSSM、ESIM和目标在NLP领域大行其道的Bert模型。
 
 #### 3.1 DSSM
-DSSM有Po-Sen Huang等人于2013年在文章[Learning deep structured semantic models for web search using clickthrough data](./Paper/NLP/【DSSM】 Learning Deep Structured Semantic Models for Web Search using Clickthrough Data.pdf)中提出。最初应用于检索场景下的query和doc匹配。在DSSM之前，更多是利用一些传统的机器学习算法。所以DSSM可以说是深度学习在文本相似度匹配领域的一个先驱者。
+DSSM有Po-Sen Huang等人于2013年在文章[Learning deep structured semantic models for web search using clickthrough data](./Paper/NLP/{DSSM} Learning Deep Structured Semantic Models for Web Search using Clickthrough Data.pdf)中提出。最初应用于检索场景下的query和doc匹配。在DSSM之前，更多是利用一些传统的机器学习算法。所以DSSM可以说是深度学习在文本相似度匹配领域的一个先驱者。
 
 DSSM模型中利用点击率来代替相关性，点击数据中包含了大量用户的问句和对应的点击文档。
 
@@ -113,13 +113,13 @@ DSSM模型有以下几个优点：
 - word hashing可能造成冲突；
 - DSSM采用了词袋模型，损失了上下文信息。
 
-针对DSSM中存在的问题，渐渐有人提出了很多优化变种，其中较为经典的便是[CNN-DSSM](./Paper/NLP/【CNN-DSSM】 A Latent Semantic Model with Convolutional-Pooling Structure for Information Retrieval.pdf)、[LSTM-DSSM](./Paper/NLP/[LSTM-DSSM] Semantic Modelling With Long-short-term Memory for Information Retrieval.pdf
-)、[MV-DSSM](./Paper/NLP/【MV-DSSM】 A Multi-Viev Deep Learning Approach for Cross Domain User Model in Recommendation Systems.pdf)等。
+针对DSSM中存在的问题，渐渐有人提出了很多优化变种，其中较为经典的便是[CNN-DSSM](./Paper/NLP/{CNN-DSSM} A Latent Semantic Model with Convolutional-Pooling Structure for Information Retrieval.pdf)、[LSTM-DSSM](./Paper/NLP/[LSTM-DSSM] Semantic Modelling With Long-short-term Memory for Information Retrieval.pdf
+)、[MV-DSSM](./Paper/NLP/{MV-DSSM} A Multi-Viev Deep Learning Approach for Cross Domain User Model in Recommendation Systems.pdf)等。
 
 ### 3.2 ESIM
 前面介绍了可以称作文本匹配先驱者的DSSM模型之后，接下来将要介绍的是被称作当年最强的短文本匹配模型——ESIM。
 
-ESIM提出于文章[Enhanced LSTM for Natural Language Inference](./Paper/NLP/【ESIM】 Enhanced LSTM for Natural Language Inference.pdf)中。ESIM主要用作文本推理，给定一个前提Premise推导出假设Hypothesis，其损失函数的目标是判断Premise和Hypothesis是否有关联，即是否可以由Premise推导出Hypothesis，因此可以用作文本匹配模型。如下图左半部所示，ESIM主要分为四部分：Input Encoding、Local Inference Modeling、Interence Composition和Prediction。
+ESIM提出于文章[Enhanced LSTM for Natural Language Inference](./Paper/NLP/{ESIM} Enhanced LSTM for Natural Language Inference.pdf)中。ESIM主要用作文本推理，给定一个前提Premise推导出假设Hypothesis，其损失函数的目标是判断Premise和Hypothesis是否有关联，即是否可以由Premise推导出Hypothesis，因此可以用作文本匹配模型。如下图左半部所示，ESIM主要分为四部分：Input Encoding、Local Inference Modeling、Interence Composition和Prediction。
 
 ![image](https://github.com/pxz97/AlgorithmsByPython/blob/master/figure/esim1.png)
 
@@ -160,7 +160,7 @@ ESIM具有以下优点：
 ESIM通过句子间的注意力机制（intra-sentence attention），来实现局部的推断，并进一步实现全局的推断。
 
 ### 3.3 Bert
-在Google与2017年提出[Transformer](./Papar/NLP/【Transformer】 Attention Is All You Need (google 2017).pdf)，并于2018年提出[Bert]([BERT] Bert Pre-training of Deep Bidirectional Transformers for Language Understanding (google 2019).pdf)，Bert在NLP几乎刷新了所有领域的精度，几乎起到了统治性的地位。Bert主要具有以下几个特点：
+在Google与2017年提出[Transformer](./Papar/NLP/【Transformer】 Attention Is All You Need (google 2017).pdf)，并于2018年提出[Bert]({BERT} Bert Pre-training of Deep Bidirectional Transformers for Language Understanding (google 2019).pdf)，Bert在NLP几乎刷新了所有领域的精度，几乎起到了统治性的地位。Bert主要具有以下几个特点：
 - 使用了Transformer中的Encoder编码器作为主体框架，Transformer可以很有效地捕捉语句中的双向关系；
 - 使用了Mask Language Model（MLM）和Next Sentence（NSP）作为训练模型的任务；
 - 使用了大量的语料作为模型的训练数据。
