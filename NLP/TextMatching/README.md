@@ -35,6 +35,19 @@ n-gram相似度计算方法是指按长度n将原句划分为词段，然后对�
 Jaccard相似度就是计算两个句子之间字词集合的并集与交集的比值。值越大，表示两个句子越相似，公式如下：
 
 ![image](https://github.com/pxz97/AlgorithmsByPython/blob/master/figure/jaccard.png)
+#### 1.3 BM25
+BM25算法，通常用来作搜索相关性平分。一句话概况其主要思想：对Query进行语素解析，生成语素qi；然后，对于每个搜索结果D，计算每个语素qi与D的相关性得分，最后，将qi相对于D的相关性得分进行加权求和，从而得到Query与D的相关性得分。
+其公式可以总结为：
+
+![image](https://github.com/pxz97/AlgorithmsByPython/blob/master/figure/bm25_1.png)
+
+其中，
+
+![image](https://github.com/pxz97/AlgorithmsByPython/blob/master/figure/bm25_1.png)
+
+fi为qi在d中出现的频率，k1和b为调节因子，通常根据经验进行调参设置，dl为文档d的长度，avgdl为所有文档的平均长度。
+
+
 ### 2 基于向量空间
 #### 2.1 TF-IDF
 TF-IDF可以分为两部分：词频（Term Frequency，TF）和逆文本频率（Inverse Document Frequency，IDF）。TF-IDF是一种统计方法，用以评估一个字词对于一个文档集或一个语料库中其中一份文档的重要程度。它的核心思想是：字词的重要性随着它在文档中出现的次数成正比而增加，随着它在语料库中出现的频率成反比而下降。
@@ -166,7 +179,7 @@ ESIM通过句子间的注意力机制（intra-sentence attention），来实现�
 - 使用了大量的语料作为模型的训练数据。
 
 #### 3.3.1 网络结构
-Bert的结构其实比较好理解，就是Transformer中的Encoder结构叠加而成。
+Bert的结构其实比较好理解，其主体架构就是Transformer中的Encoder结构叠加而成。
 
 ![image](https://github.com/pxz97/AlgorithmsByPython/blob/master/figure/transformer.png)
 
