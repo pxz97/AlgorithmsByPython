@@ -1,10 +1,12 @@
 from tensorflow.keras import Model
 from tensorflow.keras import layers
+from NLP.TextClassification.base.base_model import BaseModel
 
 
-class TextCNN:
+class TextCNN(BaseModel):
 
     def __init__(self, params, generator, vocab_generator):
+        super().__init__()
         self.params = params
         self.generator = generator
         self.vocab_generator = vocab_generator

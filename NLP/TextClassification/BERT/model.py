@@ -1,11 +1,13 @@
 from keras_bert import load_trained_model_from_checkpoint
 from tensorflow.keras import layers
 from tensorflow.keras import Model
+from NLP.TextClassification.base.base_model import BaseModel
 
 
-class BERT():
+class BERT(BaseModel):
 
     def __init__(self, params, generator, vocab_generator):
+        super().__init__()
         self.params = params
         self.dict_path = self.params["bert_dict"]
         self.config_path = self.params["bert_config"]
